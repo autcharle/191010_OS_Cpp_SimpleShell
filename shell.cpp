@@ -45,7 +45,7 @@ void input(char** args, int i);
 //Hàm khởi tạo mảng ioBuff
 void initIOBuf(char** args, int i);
 //Hàm tính toán xử lý chức năng Communication via a Pipe
-void pipe(char** args, int i,int* needWait);
+void pipe(char** args, int i, int* needWait);
 
 int main(void)
 {
@@ -177,7 +177,7 @@ int main(void)
 		{
 			if (strcmp(args[i], "|") == 0 && args[i + 1] != NULL)
 			{
-				pipe(args, i,&needToWait);
+				pipe(args, i, &needToWait);
 				pipeFlag = 1; /*Set cờ = 1*/
 				break;
 			}
@@ -236,7 +236,7 @@ int main(void)
 		{
 			if (strcmp(argsPtr[i], "|") == 0 && pipeFlag == 0 && argsPtr[i + 1] != NULL)
 			{
-				pipe(argsPtr, i,&needToWait);
+				pipe(argsPtr, i, &needToWait);
 				pipeFlag = 1;
 				break;
 			}
