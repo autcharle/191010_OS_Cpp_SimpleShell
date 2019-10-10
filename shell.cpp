@@ -45,7 +45,7 @@ void input(char** args, int i);
 //Hàm khởi tạo mảng ioBuff
 void initIOBuf(char** args, int i);
 //Hàm tính toán xử lý chức năng Communication via a Pipe
-void pipe(char** args, int i);
+void pipe(char** args, int i,int* needWait);
 
 int main(void)
 {
@@ -177,7 +177,7 @@ int main(void)
 		{
 			if (strcmp(args[i], "|") == 0 && args[i + 1] != NULL)
 			{
-				pipe(args, i);
+				pipe(args, i,&needToWait);
 				pipeFlag = 1; /*Set cờ = 1*/
 				break;
 			}
@@ -222,7 +222,7 @@ int main(void)
 				//redirecting input
 		for (int i = 0; argsPtr[i] != NULL; i++)
 		{
-			if (strcmp(argsPtr[i], "<") == 0 && argsPtr[i + 1] != NULL)
+			if (strcmp(argsPtr[i], "<") == 0 && argsPtr[i + 1] != NULL && ioIdx != -2)
 			{
 				ioIdx = i;
 				input(argsPtr, i);
@@ -236,7 +236,7 @@ int main(void)
 		{
 			if (strcmp(argsPtr[i], "|") == 0 && pipeFlag == 0 && argsPtr[i + 1] != NULL)
 			{
-				pipe(argsPtr, i);
+				pipe(argsPtr, i,&needToWait);
 				pipeFlag = 1;
 				break;
 			}
@@ -260,7 +260,7 @@ int main(void)
 					return 1;
 				}
 			}
-			else /*pid > 0*/
+			else /*pid > 0 - code chạy trong tiến trình cha*/
 			{
 				if (needToWait)
 				{
@@ -422,20 +422,31 @@ void output(char** args, int i)
 	args[i] = NULL;
 	args[i + 1] = NULL;
 	close(f);
+
 }
 
 void input(char** args, int i)
 {
-	int f = fileno(fopen(args[i + 1], "r"));
-	initIOBuf(args, i);
-	for (int j = i; args[j] != NULL; j++)
+	FILE* fp = fopen(args[i + 1], "r");
+	if (fp != NULL)
 	{
-		args[j] = args[j + 1];
+		int f = fileno(fp);
+		initIOBuf(args, i);
+		for (int j = i; args[j] != NULL; j++)
+		{
+			args[j] = args[j + 1];
+		}
+		close(f);
 	}
-	close(f);
+	else
+	{
+		printf("CANNOT ACCESS FILE\n");
+		ioIdx = -2; /*Default lỗi đọc file là -2*/
+		return;
+	}
 }
 
-void pipe(char** args, int i)
+void pipe(char** args, int i, int* needWait)
 {
 	//mảng chứa 2 phần tử file descriptor
 		//(pipefd[0] read end, pipefd[1] write end)
@@ -493,7 +504,15 @@ void pipe(char** args, int i)
 		}
 		else
 		{
-			while (wait(NULL) != pid2); /*đợi tiến trình con chạy xong mới thoát*/
+			if (*needWait)
+			{
+				while (wait(NULL) != pid2); /*đợi tiến trình con chạy xong mới thoát*/
+			}
+			else
+			{
+				printf("[1]%d\n", pid1);
+				printf("[2]%d\n", pid2);
+			}
 		}
 	}
 	close(pipefd[0]);
